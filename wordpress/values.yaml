@@ -1,0 +1,41 @@
+pvc:
+  name: pvc-wp
+  storageClassName: nfs-client-wp
+  accessModes:
+    - ReadWriteOnce
+  storage: 10Gi
+
+deployment:
+  name: wordpress
+  replicaCount: 1
+  imageName: wordpress:latest
+  containerPort: 80
+  dbHost: mysql-svc
+  dbName: mysql
+  dbUserKey: username
+  dbPasswordKey: password
+  uploadsMountPath: /var/www/html/wp-content/uploads
+
+ingress:
+  name: wp-ingress
+  namespace: default
+  issuer: letsencrypt
+  className: nginx
+  host: wordpress.152.42.150.3.nip.io
+  tlsHost: wordpress.152.42.150.3.nip.io
+  serviceName: wordpress-svc
+  servicePort: 80
+  certSecretName: wordpress-cert
+
+service:
+  name: wordpress-svc
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: wordpress
+  port: 80
+  targetPort: 80
+
+secret:
+  name: wordpress-db-secret
+  username: root
+  password: kubfin5267
