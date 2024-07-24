@@ -1,0 +1,5 @@
+apiVersion: v2
+name: wordpress
+description: A Helm chart for deploying a WordPress blog with mysql database
+type: application
+version: 1.0.0

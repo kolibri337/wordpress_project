@@ -1,0 +1,43 @@
+image: docker:19.03.12
+
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+
+services:
+  - docker:19.03.12-dind
+
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA .
+    - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA
+
+.deploy_template:
+  stage: deploy
+  image: registry.gitlab.com/fevlake_ops/helm-deployer:latest
+  script:
+    # Setup Kubeconfig
+    - mkdir -p $HOME/.kube
+    - cat $KUBECONFIG > $HOME/.kube/config
+    # Setup GPG for Helm secrets
+    - gpg --allow-secret-key-import --import $HELM_SECRET
+    # Deploy via Helm
+    - cd wordpress/
+    - helm secrets upgrade --wait --install wordpress --namespace ${CI_ENVIRONMENT_NAME} --set image.tag=${CI_COMMIT_SHORT_SHA} -f values.enc.yaml ./
+
+dev deploy:
+  extends: .deploy_template
+  environment:
+    name: dev
+  when: manual
+
+prod deploy:
+  extends: .deploy_template
+  environment:
+    name: prod
+  when: manual

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-client-provisioner-wp
+  labels:
+    app: nfs-client-provisioner-wp
+  # replace with namespace where provisioner is deployed
+  namespace: nfs-provisioner
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nfs-client-provisioner-wp
+  template:
+    metadata:
+      labels:
+        app: nfs-client-provisioner-wp
+    spec:
+      serviceAccountName: nfs-client-provisioner
+      containers:
+        - name: nfs-client-provisioner-wp
+          image: registry.k8s.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2
+          volumeMounts:
+            - name: nfs-client-root
+              mountPath: /persistentvolumes
+          env:
+            - name: PROVISIONER_NAME
+              value: k8s-sigs.io/nfs-subdir-external-provisioner
+            - name: NFS_SERVER
+              value: 206.189.107.43
+            - name: NFS_PATH
+              value: /opt/nfs/uploads
+      volumes:
+        - name: nfs-client-root
+          nfs:
+            server: 206.189.107.43
+            path: /opt/nfs/uploads

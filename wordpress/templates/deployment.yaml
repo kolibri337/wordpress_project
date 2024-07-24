@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+spec:
+  replicas: {{ .Values.deployment.replicaCount }}
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+        - name: wordpress
+          image: {{ .Values.deployment.imageName }}
+          ports:
+            - containerPort: {{ .Values.deployment.containerPort }}
+              name: web
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: {{ .Values.deployment.dbHost }}
+            - name: WORDPRESS_DB_NAME
+              value: {{ .Values.deployment.dbName }}
+            - name: WORDPRESS_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.deployment.dbUserKey }}
+                  key: username
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.deployment.dbPasswordKey }}
+                  key: password
+          volumeMounts:
+            - name: wordpress-uploads
+              mountPath: {{ .Values.deployment.uploadsMountPath }}
+      volumes:
+        - name: wordpress-uploads
+          persistentVolumeClaim:
+            claimName: {{ .Values.pvc.name }}
